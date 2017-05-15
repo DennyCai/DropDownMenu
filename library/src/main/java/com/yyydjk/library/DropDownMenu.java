@@ -79,7 +79,7 @@ public class DropDownMenu extends LinearLayout {
         menuTextSize = a.getDimensionPixelSize(R.styleable.DropDownMenu_ddmenuTextSize, menuTextSize);
         menuSelectedIcon = a.getResourceId(R.styleable.DropDownMenu_ddmenuSelectedIcon, menuSelectedIcon);
         menuUnselectedIcon = a.getResourceId(R.styleable.DropDownMenu_ddmenuUnselectedIcon, menuUnselectedIcon);
-        menuHeighPercent = a.getFloat(R.styleable.DropDownMenu_ddmenuMenuHeightPercent,menuHeighPercent);
+        menuHeighPercent = a.getFloat(R.styleable.DropDownMenu_ddmenuMenuHeightPercent, menuHeighPercent);
         a.recycle();
 
         //初始化tabMenuView并添加到tabMenuView
@@ -101,6 +101,22 @@ public class DropDownMenu extends LinearLayout {
         containerView.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         addView(containerView, 2);
 
+        popupMenuViews = new FrameLayout(getContext());
+        popupMenuViews.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int) (DeviceUtils.getScreenSize(getContext()).y * menuHeighPercent)));
+        popupMenuViews.setVisibility(GONE);
+
+        maskView = new View(getContext());
+        maskView.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        maskView.setBackgroundColor(maskColor);
+        maskView.setVisibility(GONE);
+        maskView.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                closeMenu();
+            }
+        });
+
+
     }
 
     /**
@@ -108,9 +124,8 @@ public class DropDownMenu extends LinearLayout {
      *
      * @param tabTexts
      * @param popupViews
-     * @param contentView
      */
-    public void setDropDownMenu(@NonNull List<String> tabTexts, @NonNull List<View> popupViews, @NonNull View contentView) {
+    public void setDropDownMenu(@NonNull List<String> tabTexts, @NonNull List<View> popupViews) {
         if (tabTexts.size() != popupViews.size()) {
             throw new IllegalArgumentException("params not match, tabTexts.size() should be equal popupViews.size()");
         }
@@ -118,27 +133,12 @@ public class DropDownMenu extends LinearLayout {
         for (int i = 0; i < tabTexts.size(); i++) {
             addTab(tabTexts, i);
         }
-        containerView.addView(contentView, 0);
 
-        maskView = new View(getContext());
-        maskView.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
-        maskView.setBackgroundColor(maskColor);
-        maskView.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                closeMenu();
-            }
-        });
-        containerView.addView(maskView, 1);
-        maskView.setVisibility(GONE);
-        if (containerView.getChildAt(2) != null){
-            containerView.removeViewAt(2);
-        }
 
-        popupMenuViews = new FrameLayout(getContext());
-        popupMenuViews.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int) (DeviceUtils.getScreenSize(getContext()).y*menuHeighPercent)));
-        popupMenuViews.setVisibility(GONE);
-        containerView.addView(popupMenuViews, 2);
+//        if (containerView.getChildAt(2) != null){
+//            containerView.removeViewAt(2);
+//        }
+
 
         for (int i = 0; i < popupViews.size(); i++) {
             popupViews.get(i).setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -147,12 +147,24 @@ public class DropDownMenu extends LinearLayout {
 
     }
 
+    @Override
+    protected void onFinishInflate() {
+        super.onFinishInflate();
+        int count = getChildCount();
+        View child = getChildAt(count -1);
+        removeView(child);
+        containerView.addView(child, 0);
+        //初始化containerView内容
+        containerView.addView(maskView, 1);
+        containerView.addView(popupMenuViews, 2);
+    }
+
     private void addTab(@NonNull List<String> tabTexts, int i) {
         final TextView tab = new TextView(getContext());
         tab.setSingleLine();
         tab.setEllipsize(TextUtils.TruncateAt.END);
         tab.setGravity(Gravity.CENTER);
-        tab.setTextSize(TypedValue.COMPLEX_UNIT_PX,menuTextSize);
+        tab.setTextSize(TypedValue.COMPLEX_UNIT_PX, menuTextSize);
         tab.setLayoutParams(new LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
         tab.setTextColor(textUnselectedColor);
         tab.setCompoundDrawablesWithIntrinsicBounds(null, null, getResources().getDrawable(menuUnselectedIcon), null);
@@ -174,6 +186,7 @@ public class DropDownMenu extends LinearLayout {
             tabMenuView.addView(view);
         }
     }
+
 
     /**
      * 改变tab文字
@@ -224,7 +237,6 @@ public class DropDownMenu extends LinearLayout {
      * @param target
      */
     private void switchMenu(View target) {
-        System.out.println(current_tab_position);
         for (int i = 0; i < tabMenuView.getChildCount(); i = i + 2) {
             if (target == tabMenuView.getChildAt(i)) {
                 if (current_tab_position == i) {
